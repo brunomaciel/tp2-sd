@@ -1,6 +1,12 @@
 #include <iostream>
 #include <string>
 #include <fstream>
+#include <stdio.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <sys/time.h>
+#include "bits/stdc++.h"
 
 #define MAX_ARQUIVOS 10
 #define NOME_ARQ_LISTA_DISPONIVEIS "arquivos.txt"
@@ -23,8 +29,11 @@ string consultaMeusArquivos(int key);
 void store(int key, string value, int ID);
 string maiusculo(string str);
 string retiraEspaco(string str);
-int enviaStoreSucessor(int key, string value) ;
+void enviaStoreSucessor(int key, string value) ;
 string enviaFindSucessor(int key);
+int createSocket(int *sock);
+void enviaComandoSucessor(int key, string value, char arquivo[], int comando);
+int armazenaArquivo(int key, string value);
 
 int K,num_nos;
 string valor;
@@ -42,13 +51,16 @@ sucessor.txt
 
 Minha_Chave IP_Sucessor PORT_Sucessor
 
+g++ teclado.cpp -w -o noTeclado
+./noTeclado sucessor.txt
+
 *****/
 
 int main(int argc , char *argv[]) {
 
   //Se a quantidade de parâmetros via terminal for insuficiente
   if(argc < 2) {
-      printf("\n[CLIENTE]: Forma de uso: ./noTeclado sucessor.txt\n\n");
+      printf("\nForma de uso: ./noTeclado sucessor.txt\n\n");
       exit (EXIT_FAILURE);
   }
 
@@ -133,9 +145,10 @@ int menu() {
 	getline(cin,comando);
 
 	comando = retiraEspaco(comando);
-	comando = maiusculo(comando);
 
 	string funcao = comando.substr(0, comando.find("(")); // pegando função
+
+	funcao = maiusculo(funcao);
 
 	if (funcao.compare("EXIT") == 0) {
 	    return EXIT;
@@ -262,7 +275,9 @@ void find(int key, int ID) {
 			if (!caminho.compare("ERRO")) {
         cout << "\nArquivo não encontrado! \n";
       } else {
-				cout << "\nArquivo encontrado - Conteúdo: \n";
+				cout << "\nArquivo encontrado!";
+				cout << "\nCaminho: " << caminho;
+				cout << "\nConteúdo: \n";
         imprimeArquivo(caminho);
 				cout << "\n";
       }
@@ -281,12 +296,87 @@ string enviaFindSucessor(int key) {
 		return "ERRO";
 }
 
-int enviaStoreSucessor(int key, string value) {
-	//Envia o arquivo efetivamente
-	return 0;
+void enviaComandoSucessor(int key, string value, char arquivo[], int comando) {
+	struct sockaddr_in suc;
+	char cmd[1000]; //Armazena-se comando obtido via terminal
+	char suc_reply[10000];
+	clock_t t1; //variáveis para medir tempo de latência
+	clock_t t2;
+	string aux = to_string(comando)+"("+to_string(key)+","+value+")";
+	strcpy(cmd, aux.c_str());
+	if (comando == STORE) strcat(cmd,arquivo);
+	int sock;
+	cout << "\nTentativa de conexão";
+	cout << "\nEndereço IP: " << sucessor.IP << " Porta: " << sucessor.PORT << " Socket: "<< sock << endl;
+
+	//Cria-se o socket
+	createSocket(&sock);
+
+	//Limpa-se estruturas
+	bzero((char *) &suc, sizeof(suc));
+
+	//Define-se dados da conexão
+	suc.sin_addr.s_addr = inet_addr( sucessor.IP );
+	suc.sin_family = AF_INET;
+	suc.sin_port = htons( sucessor.PORT );
+
+	//Tentativa de conexão com servidor remoto
+	if (connect(sock , (struct sockaddr *)&suc , sizeof(suc)) < 0) {
+			perror("Conexão falhou\n");
+	} else { //Se bem sucedido
+
+			puts("Conectou\n");
+
+			t1 = clock(); //Armazena-se o tempo de início
+
+			//Envio de mensagem para o servidor
+			if( send(sock , cmd , strlen(cmd) , 0) < 0) {
+					puts("Envio falhou");
+			}
+
+			//Recebe resposta do servidor
+			if( recv(sock , suc_reply , 2000 , 0) < 0) {
+					puts("Falha ao executar 'recv'");
+			} else {
+					//Bloco de sucesso: nada falhou!
+					t2 = clock(); //Armazena-se tempo de fim
+
+					//Calcula-se tempo de duração da conversa
+					double timeT = (((double)t2 - (double)t1)/(double)CLOCKS_PER_SEC);
+
+					cout << "\nResposta do sucessor: " << suc_reply;
+
+					memset(suc_reply,0,10000); //Enche o vetor suc_reply com 2 mil zeros
+
+					close(sock); //Fecha-se o socket
+					cout << "Tempo de latência: " << timeT <<"s"<< endl;
+			}
+	}
 }
 
-//retorna NULL se não encontrar
+void enviaStoreSucessor(int key, string value) {
+		ifstream arq;
+	  arq.open(value);
+		if (arq.is_open()) {
+				//Converter arquivo em char[]
+				int max_length = 1000;
+				char arquivo[max_length];
+				int i=0;
+				char c;
+  			while (arq.get(c)) {
+					if (i>=max_length) {
+							cout << " \nTamanho maximo de caracteres para transmissao: " << max_length;
+							exit(1);
+					}
+					arquivo[i] = c;
+					i++;
+				}
+				arquivo[i]='\0';
+
+				enviaComandoSucessor(key,value,arquivo,STORE);
+		} else cout << "\nNão foi possível abrir arquivo para enviar para sucessor!\n";
+}
+
 string consultaMeusArquivos(int key) {
 	ifstream FILE;
 	FILE.open(NOME_ARQ_LISTA_DISPONIVEIS);
@@ -323,8 +413,15 @@ void store(int key, string value, int ID) {
 				cout << "\nArquivo disponibilizado com sucesso!\n";
 			}
 	  } else {
-	        if (enviaStoreSucessor(key,value) == 0) cout << "\nJá existe arquivo com essa chave!\n";
-					else cout << "\nArquivo disponibilizado com sucesso!\n";
+			    enviaStoreSucessor(key,value);
 	  }
   }
+}
+
+int createSocket(int *sock) {
+    *sock = socket(AF_INET , SOCK_STREAM , 0);
+    if (*sock == -1) {
+        printf("Não foi possível criar socket");
+    }
+    puts("Socket criado");
 }
