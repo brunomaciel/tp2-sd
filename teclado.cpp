@@ -37,6 +37,7 @@ int armazenaArquivo(int key, string value);
 
 int K,num_nos;
 string valor;
+char resposta[10000];
 
 //Composto de 'endereço IP' e 'porta'
 typedef struct a {
@@ -283,8 +284,11 @@ void find(int key, int ID) {
       }
     } else {
 			string caminhoLocal = enviaFindSucessor(key);
-			if (caminhoLocal.compare("ERRO")) cout << "\nArquivo não encontrado!\n";
-			else imprimeArquivo(caminhoLocal);
+			if (!caminhoLocal.compare("ERRO")) cout << "\nArquivo não encontrado!\n";
+			else {
+				cout << "\nConteudo: ";
+				imprimeArquivo(caminhoLocal);
+			}
     }
 
 	}
@@ -292,8 +296,32 @@ void find(int key, int ID) {
 }
 
 string enviaFindSucessor(int key) {
-	  //recupera o arquivo, cria um arquivo local que é cópia dele, e retorna caminho desse arquivo; se nao achar, retorna ERRO
-		return "ERRO";
+	  char arquivo[1];
+	  enviaComandoSucessor(key,"",arquivo,FIND);
+		int resp = resposta[0] - '0';
+		if (resp == 0) {
+			memset(resposta,0,10000);
+			return "ERRO";
+		} else if (resp == 1) {
+			int i;
+			for (i=0; resposta[i]!='#'; i++);
+			i++;
+			string caminhoLocal = "";
+			for (i; resposta[i]!='#'; i++) {
+				caminhoLocal += resposta[i];
+			}
+			i++;
+			cout << "\nCaminho local: " << caminhoLocal << "\n";
+			ofstream FILE;
+			FILE.open(caminhoLocal,std::ofstream::out); // cria o arquivo se não existe, se existe adiciona texto no final
+			if (FILE.is_open()) {
+				for (i; resposta[i]!='\0'; i++){ // se já não tem arquivo com essa chave salvo
+					FILE << resposta[i];
+				}
+			}
+			memset(resposta,0,10000);
+			return caminhoLocal;
+	}
 }
 
 void enviaComandoSucessor(int key, string value, char arquivo[], int comando) {
@@ -302,7 +330,9 @@ void enviaComandoSucessor(int key, string value, char arquivo[], int comando) {
 	char suc_reply[10000];
 	clock_t t1; //variáveis para medir tempo de latência
 	clock_t t2;
-	string aux = to_string(comando)+"("+to_string(key)+","+value+")";
+	string aux;
+	if (comando == STORE) aux = to_string(comando)+"("+to_string(key)+","+value+")";
+	else if (comando == FIND) aux = to_string(comando)+"("+to_string(key)+")";
 	strcpy(cmd, aux.c_str());
 	if (comando == STORE) strcat(cmd,arquivo);
 	int sock;
@@ -344,7 +374,11 @@ void enviaComandoSucessor(int key, string value, char arquivo[], int comando) {
 					//Calcula-se tempo de duração da conversa
 					double timeT = (((double)t2 - (double)t1)/(double)CLOCKS_PER_SEC);
 
-					cout << "\nResposta do sucessor: " << suc_reply;
+					string aux(suc_reply);
+					string param1 = aux.substr(0, aux.find("#"));
+					cout << "\nResposta do sucessor: \n" << param1;
+
+					strcpy(resposta,suc_reply);
 
 					memset(suc_reply,0,10000); //Enche o vetor suc_reply com 2 mil zeros
 
@@ -408,7 +442,7 @@ void store(int key, string value, int ID) {
 	  if (chavePertenceMeuRange(key,ID)) {
 
 	    if (armazenaArquivo(key,value) == 0) {
-	        cout << "\nJá existe arquivo com essa chave!\n";
+	      cout << "\nJá existe arquivo com essa chave!\n";
 	    } else {
 				cout << "\nArquivo disponibilizado com sucesso!\n";
 			}

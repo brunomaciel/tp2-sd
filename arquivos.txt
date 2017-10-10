@@ -1,2 +1,2 @@
-5 "TESTE"
-6 sucessor.txt
+5 teste1.txt
+6 teste2.txt

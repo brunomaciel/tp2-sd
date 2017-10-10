@@ -16,10 +16,11 @@ using namespace std;
 /*
 $ g++ requisicao.cpp -w -lpthread -o req
 
-$ ./req porta
+$ ./req porta sucessor.txt
 */
 
 int port;
+char suc_reply[10000];
 
 void *connection_handler(void *);
 void readFile(char *name, char *res);
@@ -32,6 +33,7 @@ string consultaMeusArquivos(int key);
 void criaArquivo(string value, string conteudoArq);
 int enviaComandoSucessor(int key, string value, char arquivo[], int comando);
 int createSocket(int *sock);
+int realizaFind(int key);
 
 int K,num_nos,ID;
 string valor;
@@ -209,11 +211,10 @@ void *connection_handler(void *socket_desc) {
 
         //Limita-se o vetor
         client_cmd[read_size] = '\0';
+				string aux(client_cmd);
 
         int comando = client_cmd[0] - '0';
         if (comando == STORE) {
-
-          string aux(client_cmd);
 
           string param1 = aux.substr(aux.find("(")+1);
     	    int K =  stoi(param1.substr(0, param1.find(",")));
@@ -224,21 +225,32 @@ void *connection_handler(void *socket_desc) {
           cout << "[REQUISICAO " << port << "]: Comando a ser executado: STORE("+to_string(K)+","+valor+")\n";
 
           if (realizaStore(K,valor,conteudoArq)) {
-            strcat(serverReply, "\n1 - Arquivo armazenado com sucesso!\n\0");
+            strcat(serverReply, "1 - Arquivo armazenado com sucesso!\n\0");
           } else {
-            strcat(serverReply, "\n0 - Chave duplicada!\n\0");
+            strcat(serverReply, "0 - Chave duplicada!\n\0");
           }
 
-          write(sock , serverReply , strlen(serverReply));
-
-
         } else if (comando == FIND) {
+					string parametros = aux.substr(aux.find("(")+1);
+	        K =  stoi(parametros.substr(0, parametros.find(")")));
+					cout << "[REQUISICAO " << port << "]: Comando a ser executado: FIND("+to_string(K)+")\n";
+
+					if (realizaFind(K)) {
+            strcat(serverReply, "1 - Arquivo encontrado com sucesso!\n");
+						strcat(serverReply,suc_reply);
+						//strcat(serverReply,"\0");
+          } else {
+            strcat(serverReply, "0 - Nao encontrei arquivo com esta chave!\n\0");
+          }
 
         }
+
+				write(sock , serverReply , strlen(serverReply));
 
         //Limpa-se os buffers
         memset(client_cmd, 0, 5000);
         memset(serverReply, 0, 10000);
+				memset(suc_reply, 0, 10000);
 
     }
 
@@ -254,6 +266,37 @@ void *connection_handler(void *socket_desc) {
     close(sock);
 
     return 0;
+}
+
+int realizaFind(int key) {
+	if (chavePertenceMeuRange(key)) {
+		string caminho = consultaMeusArquivos(key);
+		if (!caminho.compare("ERRO")) {
+			return 0;
+		} else {
+			ifstream arq;
+		  arq.open(caminho);
+			if (arq.is_open()) {
+				  suc_reply[0] = '#';
+					strcat(suc_reply,caminho.c_str());
+					int i=caminho.length()+1;
+					suc_reply[i]='#';
+					i++;
+					char c;
+	  			while (arq.get(c)) {
+						suc_reply[i] = c;
+						i++;
+					}
+					suc_reply[i]='\0';
+			} else return 0;
+			return 1;
+		}
+	} else {
+		char arquivo[1];
+		//cout << "Enviou para sucessor!";
+		//return 0;
+	  return enviaComandoSucessor(key,"",arquivo,FIND);
+	}
 }
 
 void readFile(char *name, char *res) {
@@ -280,7 +323,6 @@ int chavePertenceMeuRange(int key) {
 int enviaComandoSucessor(int key, string value, char arquivo[], int comando) {
 	struct sockaddr_in suc;
 	char cmd[1000]; //Armazena-se comando obtido via terminal
-	char suc_reply[10000];
 	clock_t t1; //variáveis para medir tempo de latência
 	clock_t t2;
 	string aux = to_string(comando)+"("+to_string(key)+","+value+")";
