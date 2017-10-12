@@ -1,2 +1,0 @@
-5 teste1.txt
-6 teste2.txt

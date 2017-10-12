@@ -5,7 +5,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <pthread.h>
-#include "../bits/stdc++.h"
+#include "bits/stdc++.h"
 #define FIND 0
 #define STORE 1
 #define ERROR -2
@@ -37,6 +37,7 @@ int realizaFind(int key);
 
 int K,num_nos,ID;
 string valor;
+char resposta[10000];
 
 typedef struct a {
 	char IP[25];
@@ -237,8 +238,7 @@ void *connection_handler(void *socket_desc) {
 
 					if (realizaFind(K)) {
             strcat(serverReply, "1 - Arquivo encontrado com sucesso!\n");
-						strcat(serverReply,suc_reply);
-						//strcat(serverReply,"\0");
+						strcat(serverReply,resposta);
           } else {
             strcat(serverReply, "0 - Nao encontrei arquivo com esta chave!\n\0");
           }
@@ -251,6 +251,7 @@ void *connection_handler(void *socket_desc) {
         memset(client_cmd, 0, 5000);
         memset(serverReply, 0, 10000);
 				memset(suc_reply, 0, 10000);
+				memset(resposta, 0, 10000);
 
     }
 
@@ -288,6 +289,7 @@ int realizaFind(int key) {
 						i++;
 					}
 					suc_reply[i]='\0';
+					strcpy(resposta,suc_reply);
 			} else return 0;
 			return 1;
 		}
@@ -369,12 +371,16 @@ int enviaComandoSucessor(int key, string value, char arquivo[], int comando) {
 
 					cout << "\nResposta do sucessor: " << suc_reply;
 
+					int resp = suc_reply[0] - '0';
+
+					strcpy(resposta,suc_reply);
 					memset(suc_reply,0,10000); //Enche o vetor suc_reply com 2 mil zeros
 
 					close(sock); //Fecha-se o socket
 					cout << "Tempo de latência: " << timeT <<"s"<< endl;
 
-          return suc_reply[0] - '0';
+
+          return resp;
 			}
 	}
 }

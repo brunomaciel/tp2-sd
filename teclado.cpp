@@ -375,7 +375,7 @@ void enviaComandoSucessor(int key, string value, char arquivo[], int comando) {
 					double timeT = (((double)t2 - (double)t1)/(double)CLOCKS_PER_SEC);
 
 					string aux(suc_reply);
-					string param1 = aux.substr(0, aux.find("#"));
+					string param1 = aux.substr(0, aux.find("!")+1);
 					cout << "\nResposta do sucessor: \n" << param1;
 
 					strcpy(resposta,suc_reply);
@@ -383,7 +383,7 @@ void enviaComandoSucessor(int key, string value, char arquivo[], int comando) {
 					memset(suc_reply,0,10000); //Enche o vetor suc_reply com 2 mil zeros
 
 					close(sock); //Fecha-se o socket
-					cout << "Tempo de latência: " << timeT <<"s"<< endl;
+					cout << "\nTempo de latência: " << timeT <<"s"<< endl;
 			}
 	}
 }
