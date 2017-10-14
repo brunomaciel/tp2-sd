@@ -1,3 +1,5 @@
+
+#include "bits/stdc++.h"
 #include <iostream>
 #include <string>
 #include <fstream>
@@ -6,7 +8,6 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <sys/time.h>
-#include "bits/stdc++.h"
 
 #define MAX_ARQUIVOS 10
 #define NOME_ARQ_LISTA_DISPONIVEIS "arquivos.txt"
@@ -52,7 +53,7 @@ sucessor.txt
 
 Minha_Chave IP_Sucessor PORT_Sucessor
 
-g++ teclado.cpp -w -o noTeclado
+g++ teclado.cpp -w -o noTeclado -std=c++11, para executar c++11
 ./noTeclado sucessor.txt
 
 *****/

@@ -1,11 +1,12 @@
-﻿#include <stdio.h>
+﻿
+#include "bits/stdc++.h"
+#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <pthread.h>
-#include "bits/stdc++.h"
 #define FIND 0
 #define STORE 1
 #define ERROR -2
@@ -14,7 +15,7 @@
 using namespace std;
 
 /*
-$ g++ requisicao.cpp -w -lpthread -o req
+$ g++ requisicao.cpp -w -lpthread -o req -std=c++11
 
 $ ./req porta sucessor.txt
 */

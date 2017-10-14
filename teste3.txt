@@ -1,0 +1,1 @@
+g++ requisicao.cpp -w -o req -std=c++11 -lpthread
