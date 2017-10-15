@@ -187,11 +187,6 @@ int menu() {
 	return ERROR;
 }
 
-/*int gerarChave() {
-  //https://github.com/orcaman/chord/tree/master/src
-  return 0;
-}*/
-
 int join(char* nomeArquivo) {
 		int chave = 0;
     //Lê do arquivo os dados de chave e do nó sucessor
