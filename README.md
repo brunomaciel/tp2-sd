@@ -17,7 +17,7 @@ Desenvolveu-se o projeto na máquina virtual VirtualBox 5.1.28 com o sistema ope
 
 ## Execução
 
-Para executar o arquivo servidores, execute:
+Para executar o arquivo requisição, execute:
 
 	$ g++  requisicao.cpp  -w  -lpthread  -o  req  -std=c++11
 	
@@ -25,16 +25,23 @@ Para executar o arquivo servidores, execute:
 
 Em seguida, deve-se atualizar o arquivo "sucessor.txt" com o endereço IP seguido da porta refrente à cada próximo nó.
 
-### Exemplo do arquivo servidores.txt com 4 peers
+### Exemplo do arquivo sucessor.txt com 4 peers
 
-1 4 192.168.1.114 8880
-2 4 192.168.1.109 8881
-3 4 192.168.1.110 8882
-4 4 192.168.1.111 8883
+#### Exemplo do arquivo sucessor.txt peer 1
+1 4 192.168.1.114 8881
 
-Para executar o cliente, execute: 
+#### Exemplo do arquivo sucessor.txt peer 2
+2 4 192.168.1.109 8882
+
+#### Exemplo do arquivo sucessor.txt peer 3
+3 4 192.168.1.110 8883
+
+#### Exemplo do arquivo sucessor.txt peer 4
+4 4 192.168.1.111 8880
+
+Para executar o teclado, execute: 
 
 	$ g++  teclado.cpp  -w  -o  noTeclado  -std=c++11
-	
+
 	$ ./noTeclado  sucessor.txt
 
